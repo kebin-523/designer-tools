@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>무드보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap">
+<!-- 디자인 토큰은 app/tokens.css에서만 정의 -->
+<link rel="stylesheet" href="../app/tokens.css">
+<style>
+  /* [가정] app/tokens.css에 글자 크기 토큰이 없어 임시로 둠 (폰트저울과 같은 값). 공통 변경 브랜치에서 app/tokens.css로 옮길 것 */
+  :root {
+    --text-title-size: 24px;   --text-title-weight: 700;   --text-title-lh: 1.3;
+    --text-heading-size: 18px; --text-heading-weight: 600; --text-heading-lh: 1.4;
+    --text-body-size: 14px;    --text-body-weight: 400;    --text-body-lh: 1.6;
+    --text-caption-size: 12px; --text-caption-weight: 400; --text-caption-lh: 1.5;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-ui); font-size: var(--text-body-size); line-height: var(--text-body-lh); }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  a { color: inherit; }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
+  @media (max-width: 640px) { .wrap { padding: 0 var(--space-4); } }
+
+  /* 헤더 + 탭 */
+  header { border-bottom: 1px solid var(--color-border); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); height: 56px; }
+  .brand { font-weight: 700; white-space: nowrap; }
+  nav { display: flex; overflow-x: auto; }
+  .tab { padding: var(--space-3) var(--space-4); border: 0; background: none; cursor: pointer; color: var(--color-text-sub); white-space: nowrap; border-bottom: 2px solid transparent; height: 56px; }
+  .tab:hover { color: var(--color-text); }
+  .tab[aria-selected="true"] { color: var(--color-text); font-weight: 600; border-bottom-color: var(--color-accent); }
+  .tab[aria-disabled="true"] { cursor: not-allowed; opacity: .6; }
+
+  main { padding: var(--space-5) 0 var(--space-6); }
+  h1 { margin: 0; font-size: var(--text-title-size); font-weight: var(--text-title-weight); line-height: var(--text-title-lh); }
+  h2 { margin: 0; font-size: var(--text-heading-size); font-weight: var(--text-heading-weight); line-height: var(--text-heading-lh); }
+  .intro { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-sub); }
+  .caption { font-size: var(--text-caption-size); line-height: var(--text-caption-lh); color: var(--color-text-muted); margin: 0; }
+
+  .layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* 버튼 */
+  .btn { height: 36px; padding: 0 var(--space-4); background: var(--color-bg); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+  .btn:hover:not(:disabled) { background: var(--color-surface); }
+  .btn:active:not(:disabled) { background: var(--color-border); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
+  .btn-primary:hover:not(:disabled) { background: var(--color-accent); filter: brightness(.9); }
+  .btn-text { border-color: transparent; background: none; color: var(--color-text-sub); }
+
+  /* 검색 패널 (선택 창 형태) */
+  .panel { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+  .search { display: flex; gap: var(--space-2); }
+  label { display: block; margin-bottom: var(--space-1); color: var(--color-text-sub); font-size: var(--text-caption-size); line-height: var(--text-caption-lh); }
+  input[type="text"], input[type="password"] { width: 100%; height: 40px; padding: 0 var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); }
+  input:focus { outline: none; border-color: var(--color-accent); }
+  .search input { flex: 1; min-width: 0; }
+  .search .btn { height: 40px; }
+  .results { height: 460px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); align-content: start; }
+  @media (max-width: 900px) { .results { height: 360px; } }
+  .thumb { position: relative; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); cursor: pointer; aspect-ratio: 1; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb:disabled { cursor: not-allowed; }
+  .thumb:disabled img { opacity: .45; }
+  .thumb .tag { position: absolute; left: var(--space-1); bottom: var(--space-1); padding: 0 var(--space-2); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font-size: var(--text-caption-size); line-height: 20px; border: 1px solid var(--color-border-strong); }
+  .skel { aspect-ratio: 1; background: var(--color-surface); border-radius: var(--radius-sm); }
+  .state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); text-align: center; padding: var(--space-5) var(--space-2); color: var(--color-text-sub); }
+  .state.error p { color: var(--color-danger); margin: 0; }
+  .state p { margin: 0; }
+  details { border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
+  summary { cursor: pointer; color: var(--color-text-sub); }
+  details .field { margin-top: var(--space-3); }
+
+  /* 보드 */
+  .board-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); flex-wrap: wrap; }
+  .board-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .board { position: relative; width: 100%; aspect-ratio: 16 / 9; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; touch-action: none; }
+  .board-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--space-4); color: var(--color-text-sub); pointer-events: none; }
+  .board-empty[hidden] { display: none; }
+  .item { position: absolute; cursor: grab; outline: none; user-select: none; -webkit-user-select: none; background: var(--color-bg); }
+  .item.dragging { cursor: grabbing; }
+  .item img { width: 100%; height: 100%; display: block; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+  .item.selected { outline: 2px solid var(--color-accent); }
+  .item:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 0; }
+  .item .broken { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--space-2); background: var(--color-surface); border: 1px dashed var(--color-border-strong); color: var(--color-danger); font-size: var(--text-caption-size); }
+  .handle { position: absolute; width: 12px; height: 12px; background: var(--color-bg); border: 2px solid var(--color-accent); border-radius: 2px; display: none; }
+  .item.selected .handle { display: block; }
+  .handle[data-c="nw"] { left: -7px; top: -7px; cursor: nwse-resize; }
+  .handle[data-c="ne"] { right: -7px; top: -7px; cursor: nesw-resize; }
+  .handle[data-c="sw"] { left: -7px; bottom: -7px; cursor: nesw-resize; }
+  .handle[data-c="se"] { right: -7px; bottom: -7px; cursor: nwse-resize; }
+  .credits { margin-top: var(--space-3); }
+  .credits ul { list-style: none; margin: var(--space-1) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); font-size: var(--text-caption-size); line-height: var(--text-caption-lh); color: var(--color-text-muted); }
+  .notice { margin: var(--space-3) 0 0; color: var(--color-danger); font-size: var(--text-caption-size); }
+
+  dialog { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-5); max-width: 360px; font-family: var(--font-ui); color: var(--color-text); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog p { margin: 0 0 var(--space-4); }
+  dialog .row { display: flex; justify-content: flex-end; gap: var(--space-2); }
+
+  @media (prefers-reduced-motion: no-preference) { .btn, .tab { transition: background-color .15s, color .15s; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">디자이너 도구</div>
+    <nav role="tablist" aria-label="서비스">
+      <button class="tab" role="tab" aria-selected="false" aria-disabled="true" title="아직 연결하지 않았어요">폰트저울</button>
+      <button class="tab" role="tab" aria-selected="true">무드보드</button>
+      <button class="tab" role="tab" aria-selected="false" aria-disabled="true" title="아직 만들지 않았어요">컬러 팔레트</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>무드보드</h1>
+  <p class="intro">키워드로 사진을 찾아 보드 위에 자유롭게 배치하고, 이미지로 저장하세요.</p>
+
+  <div class="layout">
+    <!-- 검색 패널 -->
+    <section class="panel" aria-label="사진 검색">
+      <form class="search" id="searchForm" role="search">
+        <div style="flex:1;min-width:0">
+          <label for="q">키워드</label>
+          <input type="text" id="q" autocomplete="off" placeholder="예: soft light">
+        </div>
+        <button class="btn btn-primary" type="submit" style="align-self:flex-end">검색</button>
+      </form>
+      <div class="results" id="results" aria-live="polite"></div>
+      <details id="keyBox">
+        <summary>Pexels API 키 연결</summary>
+        <div class="field">
+          <label for="key">API 키</label>
+          <input type="password" id="key" autocomplete="off" placeholder="Pexels에서 받은 키">
+          <p class="caption" style="margin-top:var(--space-2)">이 브라우저에만 저장돼요. 코드나 문서에는 넣지 않습니다.</p>
+          <button class="btn" type="button" id="keySave" style="margin-top:var(--space-2)">키 저장</button>
+        </div>
+      </details>
+      <p class="caption">사진 제공: <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
+    </section>
+
+    <!-- 보드 -->
+    <section aria-label="보드">
+      <div class="board-head">
+        <h2>보드 <span class="caption" id="count"></span></h2>
+        <div class="board-actions">
+          <button class="btn btn-text" id="delBtn" disabled>선택한 사진 삭제</button>
+          <button class="btn" id="resetBtn">새 보드 시작</button>
+          <button class="btn" id="exportBtn" disabled>이미지로 저장</button>
+        </div>
+      </div>
+      <div class="board" id="board" tabindex="-1">
+        <div class="board-empty" id="boardEmpty">왼쪽에서 사진을 검색해 눌러 보세요. 보드에 추가돼요.</div>
+      </div>
+      <div class="credits" id="credits"></div>
+      <p class="caption" style="margin-top:var(--space-2)">보드는 이 브라우저에 자동 저장돼요. 다른 기기나 브라우저에서는 보이지 않고, 사이트 데이터를 지우면 사라져요.</p>
+      <p class="notice" id="saveNotice" hidden>자동 저장이 되지 않고 있어요</p>
+      <p class="notice" id="exportNotice" hidden></p>
+    </section>
+  </div>
+</main>
+
+<dialog id="resetDlg">
+  <p>현재 보드가 삭제됩니다. 계속할까요?</p>
+  <div class="row">
+    <button class="btn btn-text" id="resetNo">취소</button>
+    <button class="btn" id="resetYes">삭제</button>
+  </div>
+</dialog>
+
+<script>
+/* ---------- 설정 ---------- */
+const PEXELS_ENDPOINT = 'https://api.pexels.com/v1/search'; // 응답 형식은 아직 실제 호출로 확인하지 못함
+const PER_PAGE = 20;
+const MAX_ITEMS = 20;      // [가정] 기획서 값
+const MIN_W = 0.08;        // [가정] 사진 최소 너비 (보드 너비 대비)
+const BOARD_RATIO = 16 / 9;// [가정] 보드 가로세로 비율 (기획서 열린 질문 2)
+const STORE = 'moodboard.v1', KEYSTORE = 'moodboard.pexelsKey';
+
+const $ = (id) => document.getElementById(id);
+const board = $('board');
+
+/* ---------- 저장소 (막혀 있어도 동작) ---------- */
+let storageOk = true;
+function lsGet(k) { try { return localStorage.getItem(k); } catch { storageOk = false; return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch { storageOk = false; return false; } }
+let items = [];
+try { items = JSON.parse(lsGet(STORE) || '[]'); if (!Array.isArray(items)) items = []; } catch { items = []; }
+const safeUrl = (u) => { try { const x = new URL(u); return x.protocol === 'https:' ? x.href : ''; } catch { return ''; } };
+items = items.filter(it => it && it.id != null && safeUrl(it.src) && it.w > 0 && it.width > 0 && it.height > 0).slice(0, MAX_ITEMS);
+let zTop = items.reduce((m, it) => Math.max(m, it.z || 0), 0);
+let selectedId = null;
+function persist() { lsSet(STORE, JSON.stringify(items)); $('saveNotice').hidden = storageOk; }
+
+/* ---------- 보드 그리기 ---------- */
+const hFrac = (it) => it.w * BOARD_RATIO / (it.width / it.height); // 보드 높이 대비 사진 높이
+const els = new Map();
+
+function place(it, el) {
+  el.style.left = it.x * 100 + '%'; el.style.top = it.y * 100 + '%';
+  el.style.width = it.w * 100 + '%'; el.style.height = hFrac(it) * 100 + '%';
+  el.style.zIndex = it.z || 1;
+}
+function clampItem(it) {
+  it.w = Math.min(1, Math.max(MIN_W, it.w));
+  if (hFrac(it) > 1) it.w = it.w / hFrac(it);
+  it.x = Math.min(1 - it.w, Math.max(0, it.x));
+  it.y = Math.min(1 - hFrac(it), Math.max(0, it.y));
+}
+function makeEl(it) {
+  const el = document.createElement('div');
+  el.className = 'item'; el.tabIndex = 0; el.dataset.id = it.id;
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', (it.alt || it.query || '사진') + ' — 화살표로 이동, + - 로 크기, Delete로 삭제');
+  const img = document.createElement('img');
+  img.crossOrigin = 'anonymous'; img.alt = it.alt || it.query || ''; img.draggable = false; img.src = it.src;
+  img.onerror = () => {
+    img.remove();
+    const b = document.createElement('div'); b.className = 'broken'; b.textContent = '사진을 불러오지 못했어요';
+    el.prepend(b);
+  };
+  el.appendChild(img);
+  for (const c of ['nw', 'ne', 'sw', 'se']) { const h = document.createElement('span'); h.className = 'handle'; h.dataset.c = c; el.appendChild(h); }
+  place(it, el);
+  return el;
+}
+function render() {
+  for (const [id, el] of els) if (!items.find(i => i.id === id)) { el.remove(); els.delete(id); }
+  for (const it of items) if (!els.has(it.id)) { const el = makeEl(it); board.appendChild(el); els.set(it.id, el); }
+  $('boardEmpty').hidden = items.length > 0;
+  $('count').textContent = `${items.length}/${MAX_ITEMS}장`;
+  $('exportBtn').disabled = items.length === 0;
+  applySelection();
+  renderCredits();
+  markAdded();
+}
+function applySelection() {
+  for (const [id, el] of els) el.classList.toggle('selected', id === selectedId);
+  $('delBtn').disabled = selectedId == null;
+}
+function select(id) { selectedId = id; applySelection(); }
+function renderCredits() {
+  const box = $('credits'); box.replaceChildren();
+  if (!items.length) return;
+  const t = document.createElement('p'); t.className = 'caption'; t.textContent = '사진 출처';
+  const ul = document.createElement('ul');
+  const seen = new Set();
+  for (const it of items) {
+    if (seen.has(it.photographer)) continue; seen.add(it.photographer);
+    const li = document.createElement('li');
+    const href = safeUrl(it.photographerUrl);
+    if (href) { const a = document.createElement('a'); a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = it.photographer; li.append(a); }
+    else li.textContent = it.photographer;
+    li.append(' / Pexels');
+    ul.appendChild(li);
+  }
+  box.append(t, ul);
+}
+
+/* ---------- 드래그·크기 조절·키보드 ---------- */
+let drag = null;
+board.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('.item');
+  if (!el) { select(null); return; }
+  const it = items.find(i => i.id === +el.dataset.id || String(i.id) === el.dataset.id);
+  if (!it) return;
+  select(it.id);
+  it.z = ++zTop; el.style.zIndex = it.z;
+  const r = board.getBoundingClientRect();
+  const handle = e.target.closest('.handle');
+  drag = { it, el, r, mode: handle ? 'resize' : 'move', corner: handle && handle.dataset.c,
+    sx: e.clientX, sy: e.clientY, o: { x: it.x, y: it.y, w: it.w, h: hFrac(it) } };
+  el.setPointerCapture(e.pointerId);
+  el.classList.add('dragging');
+  el.focus({ preventScroll: true });
+  e.preventDefault();
+});
+board.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const { it, el, r, o } = drag;
+  const dx = (e.clientX - drag.sx) / r.width, dy = (e.clientY - drag.sy) / r.height;
+  if (drag.mode === 'move') {
+    it.x = o.x + dx; it.y = o.y + dy;
+  } else {
+    // 반대쪽 모서리를 고정하고 가로세로 비율 유지
+    const c = drag.corner, ar = it.width / it.height;
+    const west = c.includes('w'), north = c.includes('n');
+    let w = o.w + (west ? -dx : dx);
+    w = Math.max(MIN_W, w);
+    const h = w * BOARD_RATIO / ar;
+    const fx = west ? o.x + o.w : o.x, fy = north ? o.y + o.h : o.y;
+    it.w = w; it.x = west ? fx - w : fx; it.y = north ? fy - h : fy;
+  }
+  clampItem(it); place(it, el);
+});
+function endDrag() { if (!drag) return; drag.el.classList.remove('dragging'); drag = null; persist(); }
+board.addEventListener('pointerup', endDrag);
+board.addEventListener('pointercancel', endDrag);
+
+function removeItem(id) {
+  items = items.filter(i => i.id !== id);
+  if (selectedId === id) selectedId = null;
+  persist(); render();
+}
+document.addEventListener('keydown', (e) => {
+  if (selectedId == null) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'dialog') return;
+  const it = items.find(i => i.id === selectedId); if (!it) return;
+  const step = e.shiftKey ? 0.05 : 0.01;
+  let used = true;
+  if (e.key === 'Delete' || e.key === 'Backspace') { removeItem(it.id); e.preventDefault(); return; }
+  else if (e.key === 'ArrowLeft') it.x -= step;
+  else if (e.key === 'ArrowRight') it.x += step;
+  else if (e.key === 'ArrowUp') it.y -= step;
+  else if (e.key === 'ArrowDown') it.y += step;
+  else if (e.key === '+' || e.key === '=') it.w += step;
+  else if (e.key === '-') it.w -= step;
+  else if (e.key === 'Escape') { select(null); return; }
+  else used = false;
+  if (!used) return;
+  e.preventDefault(); clampItem(it); place(it, els.get(it.id)); persist();
+});
+$('delBtn').onclick = () => selectedId != null && removeItem(selectedId);
+
+/* ---------- 새 보드 ---------- */
+const dlg = $('resetDlg');
+$('resetBtn').onclick = () => { if (!items.length) return; dlg.showModal ? dlg.showModal() : (confirm('현재 보드가 삭제됩니다. 계속할까요?') && doReset()); };
+$('resetNo').onclick = () => dlg.close();
+$('resetYes').onclick = () => { dlg.close(); doReset(); };
+function doReset() { items = []; selectedId = null; persist(); render(); }
+
+/* ---------- 검색 ---------- */
+const cache = new Map();           // 같은 검색어·쪽은 화면 안에서 재사용
+let state = { q: '', page: 0, photos: [], done: false, loading: false, token: 0, error: null };
+const results = $('results');
+let observer = null;
+
+function apiKey() { return lsGet(KEYSTORE) || ''; }
+$('key').value = apiKey();
+$('keySave').onclick = () => { lsSet(KEYSTORE, $('key').value.trim()); if (state.error === 'nokey' && state.q) startSearch(state.q); else if (!$('key').value.trim()) return; $('keyBox').open = false; };
+if (!apiKey()) $('keyBox').open = true;
+
+async function fetchPage(q, page) {
+  const ck = q + '|' + page;
+  if (cache.has(ck)) return cache.get(ck);
+  const key = apiKey();
+  if (!key) { const e = new Error('nokey'); e.kind = 'nokey'; throw e; }
+  let res;
+  try { res = await fetch(`${PEXELS_ENDPOINT}?query=${encodeURIComponent(q)}&per_page=${PER_PAGE}&page=${page}`, { headers: { Authorization: key } }); }
+  catch { const e = new Error('network'); e.kind = 'network'; throw e; }
+  if (res.status === 429) { const e = new Error('limit'); e.kind = 'limit'; throw e; }
+  if (res.status === 401 || res.status === 403) { const e = new Error('auth'); e.kind = 'auth'; throw e; }
+  if (!res.ok) { const e = new Error('http'); e.kind = 'network'; throw e; }
+  const data = await res.json();
+  cache.set(ck, data);
+  return data;
+}
+
+function startSearch(q) {
+  state = { q, page: 0, photos: [], done: false, loading: false, token: state.token + 1, error: null };
+  results.scrollTop = 0;
+  loadMore();
+}
+async function loadMore() {
+  if (state.loading || state.done) return;
+  state.loading = true; state.error = null;
+  const tok = state.token, next = state.page + 1;
+  drawResults();
+  try {
+    const data = await fetchPage(state.q, next);
+    if (tok !== state.token) return;
+    const photos = (data.photos || []).filter(p => p && p.src && safeUrl(p.src.medium) && safeUrl(p.src.large));
+    state.photos.push(...photos);
+    state.page = next;
+    state.done = !data.next_page || photos.length === 0;
+  } catch (e) {
+    if (tok !== state.token) return;
+    state.error = e.kind || 'network';
+  }
+  state.loading = false;
+  drawResults();
+}
+
+function drawResults() {
+  if (observer) observer.disconnect();
+  results.replaceChildren();
+  const s = state;
+  if (!s.q && !s.error) {
+    results.append(stateBox('키워드를 검색해서 사진을 찾아보세요'));
+    return;
+  }
+  if (s.error === 'nokey') { results.append(stateBox('Pexels API 키를 아래에 입력하면 검색할 수 있어요', null, false)); $('keyBox').open = true; return; }
+  for (const p of s.photos) results.appendChild(thumb(p));
+  if (s.loading) for (let i = 0; i < 4; i++) { const d = document.createElement('div'); d.className = 'skel'; d.setAttribute('aria-hidden', 'true'); results.appendChild(d); }
+  if (s.error && s.error !== 'nokey') {
+    const msg = { limit: '사용 한도에 도달했어요. 잠시 후 다시 시도해 주세요. (사진 서비스의 사용 한도 때문이에요)', auth: 'API 키가 맞지 않아요. 키를 다시 확인해 주세요.', network: '사진을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.' }[s.error] || '사진을 불러오지 못했어요.';
+    results.appendChild(stateBox(msg, () => loadMore(), true));
+  } else if (!s.loading && !s.photos.length) {
+    results.appendChild(stateBox('다른 키워드로 검색해 보세요'));
+  } else if (!s.loading && !s.done) {
+    const sent = document.createElement('div'); sent.style.cssText = 'grid-column:1/-1;height:1px';
+    results.appendChild(sent);
+    observer = new IntersectionObserver((en) => { if (en[0].isIntersecting) loadMore(); }, { root: results, rootMargin: '200px' });
+    observer.observe(sent);
+  }
+  markAdded();
+}
+function stateBox(text, retry, isError) {
+  const d = document.createElement('div'); d.className = 'state' + (isError ? ' error' : '');
+  const p = document.createElement('p'); p.textContent = text; d.appendChild(p);
+  if (retry) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = '다시 시도'; b.onclick = retry; d.appendChild(b); }
+  return d;
+}
+function thumb(p) {
+  const b = document.createElement('button');
+  b.className = 'thumb'; b.type = 'button'; b.dataset.id = p.id;
+  const alt = p.alt || state.q;
+  b.setAttribute('aria-label', `${alt} — 보드에 추가`);
+  const img = document.createElement('img'); img.src = p.src.medium; img.alt = ''; img.loading = 'lazy';
+  b.appendChild(img);
+  b.onclick = () => addPhoto(p);
+  return b;
+}
+function markAdded() {
+  const ids = new Set(items.map(i => String(i.id)));
+  const full = items.length >= MAX_ITEMS;
+  results.querySelectorAll('.thumb').forEach(b => {
+    const added = ids.has(b.dataset.id);
+    b.disabled = added || full;
+    const tag = b.querySelector('.tag');
+    if (added && !tag) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = '✓ 추가됨'; b.appendChild(t); }
+    if (!added && tag) tag.remove();
+    if (!added && full) b.title = `보드에는 ${MAX_ITEMS}장까지 담을 수 있어요`; else b.removeAttribute('title');
+  });
+}
+function addPhoto(p) {
+  if (items.length >= MAX_ITEMS || items.some(i => String(i.id) === String(p.id))) return;
+  const w = 0.28;
+  const it = { id: p.id, src: p.src.large, width: p.width, height: p.height, alt: p.alt || state.q, query: state.q,
+    photographer: p.photographer || 'Unknown', photographerUrl: p.photographer_url || '',
+    x: 0, y: 0, w, z: ++zTop };
+  // 보드 가운데 근처, 조금씩 어긋나게
+  const off = (items.length % 5) * 0.02;
+  it.x = 0.5 - w / 2 + off; it.y = 0.5 - hFrac(it) / 2 + off;
+  clampItem(it);
+  items.push(it); selectedId = it.id;
+  persist(); render();
+}
+$('searchForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const q = $('q').value.trim();
+  if (!q) return;
+  startSearch(q);
+});
+
+/* ---------- 이미지로 저장 ---------- */
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function loadImg(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => rej(new Error('img')); i.src = src; });
+}
+$('exportBtn').onclick = async () => {
+  const note = $('exportNotice'); note.hidden = true;
+  const W = 1600, H = Math.round(W / BOARD_RATIO);
+  try {
+    const imgs = await Promise.all(items.map(it => loadImg(it.src).catch(() => null)));
+    const font = `"Noto Sans KR", system-ui, sans-serif`;
+    // 출처 줄 만들기
+    const names = [...new Set(items.map(i => i.photographer))];
+    const lines = []; let cur = '사진: ';
+    const meas = document.createElement('canvas').getContext('2d'); meas.font = `20px ${font}`;
+    for (const n of names) {
+      const part = (cur === '사진: ' ? '' : ', ') + n;
+      if (meas.measureText(cur + part).width > W - 64 && cur !== '사진: ') { lines.push(cur); cur = n; } else cur += part;
+    }
+    lines.push(cur + ' / Pexels');
+    const strip = 24 + lines.length * 30;
+    const c = document.createElement('canvas'); c.width = W; c.height = H + strip;
+    const g = c.getContext('2d');
+    g.fillStyle = cssVar('--color-bg'); g.fillRect(0, 0, W, H + strip);
+    g.fillStyle = cssVar('--color-surface'); g.fillRect(0, 0, W, H);
+    const ordered = items.map((it, i) => ({ it, img: imgs[i] })).sort((a, b) => (a.it.z || 0) - (b.it.z || 0));
+    for (const { it, img } of ordered) {
+      const x = it.x * W, y = it.y * H, w = it.w * W, h = hFrac(it) * H;
+      if (img) g.drawImage(img, x, y, w, h);
+      else { g.fillStyle = cssVar('--color-border'); g.fillRect(x, y, w, h); }
+    }
+    g.fillStyle = cssVar('--color-text-muted'); g.font = `20px ${font}`; g.textBaseline = 'top';
+    lines.forEach((l, i) => g.fillText(l, 32, H + 16 + i * 30));
+    const blob = await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/png'));
+    const d = new Date(), pad = (n) => String(n).padStart(2, '0');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `무드보드_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    if (imgs.some(i => !i)) { note.textContent = '일부 사진을 불러오지 못해 빈 칸으로 저장됐어요'; note.hidden = false; }
+  } catch {
+    note.textContent = '이미지로 저장하지 못했어요. 브라우저가 외부 사진을 막았을 수 있어요.';
+    note.hidden = false;
+  }
+};
+
+document.querySelectorAll('.tab[aria-disabled="true"]').forEach(t => t.onclick = (e) => e.preventDefault());
+
+/* 시작 */
+render();
+drawResults();
+$('saveNotice').hidden = storageOk;
+</script>
+</body>
+</html>
