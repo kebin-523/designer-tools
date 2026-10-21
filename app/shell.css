@@ -1,0 +1,39 @@
+/* 탭 틀(헤더 + 탭 + 서비스 제목 영역). 디자인 값은 app/tokens.css의 토큰으로만 쓴다. */
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-ui); font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
+@media (max-width: 640px) { .wrap { padding: 0 var(--space-4); } }
+
+/* 헤더 + 탭 */
+header { border-bottom: 1px solid var(--color-border); }
+header .wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4); height: var(--header-height);
+}
+.brand { font-weight: 700; white-space: nowrap; }
+nav { display: flex; overflow-x: auto; }
+.tab {
+  padding: var(--space-3) var(--space-4); border: 0; background: none; cursor: pointer;
+  color: var(--color-text-sub); white-space: nowrap; border-bottom: 2px solid transparent;
+  height: var(--header-height);
+}
+.tab:hover { color: var(--color-text); }
+.tab[aria-selected="true"] { color: var(--color-text); font-weight: 600; border-bottom-color: var(--color-accent); }
+.tab[aria-disabled="true"] { cursor: not-allowed; opacity: .6; }
+
+/* 세로 간격: 헤더 → 제목 / 제목 → 소개 / 소개 → 첫 콘텐츠 / 콘텐츠 사이 */
+main { padding: var(--space-6) 0; }
+h1 {
+  margin: 0; font-size: var(--text-title-size);
+  font-weight: var(--text-title-weight); line-height: var(--text-title-lh);
+}
+.intro { margin: var(--space-2) 0 var(--space-5); color: var(--color-text-sub); }
+main > section + section { margin-top: var(--space-5); }
