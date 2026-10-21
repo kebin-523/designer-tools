@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>컬러 팔레트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap">
+<!-- 디자인 토큰은 app/tokens.css에서만 정의 -->
+<link rel="stylesheet" href="../app/tokens.css">
+<style>
+  /* [가정] app/tokens.css에 글자 크기 토큰이 없어 임시로 둠 (다른 서비스와 같은 값). 공통 변경 브랜치에서 app/tokens.css로 옮길 것 */
+  :root {
+    --text-title-size: 24px;   --text-title-weight: 700;   --text-title-lh: 1.3;
+    --text-heading-size: 18px; --text-heading-weight: 600; --text-heading-lh: 1.4;
+    --text-body-size: 14px;    --text-body-weight: 400;    --text-body-lh: 1.6;
+    --text-caption-size: 12px; --text-caption-weight: 400; --text-caption-lh: 1.5;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-ui); font-size: var(--text-body-size); line-height: var(--text-body-lh); }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
+  @media (max-width: 640px) { .wrap { padding: 0 var(--space-4); } }
+
+  header { border-bottom: 1px solid var(--color-border); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); height: 56px; }
+  .brand { font-weight: 700; white-space: nowrap; }
+  nav { display: flex; overflow-x: auto; }
+  .tab { padding: var(--space-3) var(--space-4); border: 0; background: none; cursor: pointer; color: var(--color-text-sub); white-space: nowrap; border-bottom: 2px solid transparent; height: 56px; }
+  .tab:hover { color: var(--color-text); }
+  .tab[aria-selected="true"] { color: var(--color-text); font-weight: 600; border-bottom-color: var(--color-accent); }
+  .tab[aria-disabled="true"] { cursor: not-allowed; opacity: .6; }
+
+  main { padding: var(--space-5) 0 var(--space-6); }
+  h1 { margin: 0; font-size: var(--text-title-size); font-weight: var(--text-title-weight); line-height: var(--text-title-lh); }
+  h2 { margin: 0; font-size: var(--text-heading-size); font-weight: var(--text-heading-weight); line-height: var(--text-heading-lh); }
+  .intro { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-sub); }
+  .caption { font-size: var(--text-caption-size); line-height: var(--text-caption-lh); color: var(--color-text-muted); margin: 0; }
+  section + section { margin-top: var(--space-6); }
+  label { display: block; margin-bottom: var(--space-1); color: var(--color-text-sub); font-size: var(--text-caption-size); line-height: var(--text-caption-lh); }
+
+  .btn { height: 36px; padding: 0 var(--space-4); background: var(--color-bg); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+  .btn:hover:not(:disabled) { background: var(--color-surface); }
+  .btn:active:not(:disabled) { background: var(--color-border); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-icon { width: 36px; padding: 0; font-size: 20px; line-height: 1; color: var(--color-text-sub); }
+  .btn-icon[aria-pressed="true"] { color: var(--color-accent); }
+  .btn-text { border-color: transparent; background: none; color: var(--color-text-sub); }
+
+  input[type="text"] { width: 100%; height: 40px; padding: 0 var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); font-variant-numeric: tabular-nums; }
+  input[type="text"]:focus { outline: none; border-color: var(--color-accent); }
+  input[type="color"] { width: 40px; height: 40px; padding: 2px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); cursor: pointer; flex: none; }
+  .colorfield { display: flex; gap: var(--space-2); align-items: center; }
+  .colorfield input[type="text"] { width: 160px; }
+  .err { margin: var(--space-1) 0 0; color: var(--color-danger); font-size: var(--text-caption-size); min-height: 1.5em; }
+
+  /* 안내 띠 */
+  .banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+  .banner[hidden] { display: none; }
+  .banner p { margin: 0; }
+
+  /* 조합 줄 */
+  .scheme { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); }
+  .scheme + .scheme { margin-top: var(--space-4); }
+  .scheme-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .scheme-head .tag { display: inline-block; margin-left: var(--space-2); padding: 0 var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); font-size: var(--text-caption-size); color: var(--color-text-sub); vertical-align: middle; }
+  .chips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); }
+  @media (max-width: 640px) { .chips { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .chip { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
+  .chip .sw { display: block; height: 72px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+  .chip .hex { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chip .nm { font-size: var(--text-caption-size); line-height: var(--text-caption-lh); color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 1.5em; }
+  .chip:hover .hex { text-decoration: underline; }
+  .skel { height: 72px; background: var(--color-surface); border-radius: var(--radius-sm); }
+  .skel.s { height: 16px; margin-top: var(--space-2); }
+
+  /* 대비 */
+  .contrast { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+  @media (max-width: 760px) { .contrast { grid-template-columns: 1fr; } }
+  .strip { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+  .pick { width: 36px; height: 36px; padding: 0; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); cursor: pointer; position: relative; font-size: 16px; line-height: 1; }
+  .pick[aria-pressed="true"] { border-width: 2px; border-color: var(--color-text); }
+  .result { margin-top: var(--space-4); display: flex; gap: var(--space-5); align-items: stretch; flex-wrap: wrap; }
+  .ratio { font-size: var(--text-title-size); font-weight: 700; line-height: 1.3; font-variant-numeric: tabular-nums; }
+  .verdicts { display: flex; flex-direction: column; gap: var(--space-1); }
+  .v-fail { color: var(--color-danger); font-weight: 600; }
+  .preview { flex: 1; min-width: 220px; padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+  .preview .big { font-size: 24px; font-weight: 700; line-height: 1.3; margin: 0 0 var(--space-1); }
+  .preview .small { margin: 0; }
+
+  /* 저장 목록 */
+  .saved-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-3); }
+  .saved-item { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+  .mini { display: flex; height: 40px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--color-border); padding: 0; background: none; cursor: pointer; width: 100%; }
+  .mini span { flex: 1; }
+  .saved-row { display: flex; gap: var(--space-2); align-items: center; }
+  .saved-row input { height: 36px; min-width: 0; flex: 1; }
+  .empty { margin: var(--space-3) 0 0; color: var(--color-text-muted); }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">디자이너 도구</div>
+    <nav role="tablist" aria-label="서비스">
+      <button class="tab" role="tab" aria-selected="false" aria-disabled="true" title="아직 연결하지 않았어요">폰트저울</button>
+      <button class="tab" role="tab" aria-selected="false" aria-disabled="true" title="아직 연결하지 않았어요">무드보드</button>
+      <button class="tab" role="tab" aria-selected="true">컬러 팔레트</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>컬러 팔레트</h1>
+  <p class="intro">기준 색 하나로 어울리는 조합 네 가지를 한 번에 보고, 글자 대비까지 확인하세요.</p>
+
+  <section aria-label="기준 색">
+    <label for="baseHex">기준 색</label>
+    <div class="colorfield">
+      <input type="color" id="basePick" aria-label="기준 색 고르기">
+      <input type="text" id="baseHex" maxlength="7" autocomplete="off" spellcheck="false" aria-describedby="baseErr">
+    </div>
+    <p class="err" id="baseErr" role="alert"></p>
+  </section>
+
+  <section aria-label="색 조합">
+    <div class="banner" id="banner" hidden>
+      <p>색 조합 서비스에 연결하지 못해 직접 계산한 결과예요. 서비스 결과와 조금 다를 수 있어요.</p>
+      <button class="btn" id="retryBtn">다시 시도</button>
+    </div>
+    <div id="schemes"></div>
+  </section>
+
+  <section aria-label="글자·배경 대비 확인">
+    <h2>글자·배경 대비 확인</h2>
+    <div class="contrast" style="margin-top:var(--space-3)">
+      <div>
+        <label for="fgHex">글자색</label>
+        <div class="colorfield"><input type="color" id="fgPick" aria-label="글자색 고르기"><input type="text" id="fgHex" maxlength="7" autocomplete="off" spellcheck="false"></div>
+        <div class="strip" id="fgStrip" role="group" aria-label="현재 색에서 글자색 고르기"></div>
+      </div>
+      <div>
+        <label for="bgHex">배경색</label>
+        <div class="colorfield"><input type="color" id="bgPick" aria-label="배경색 고르기"><input type="text" id="bgHex" maxlength="7" autocomplete="off" spellcheck="false"></div>
+        <div class="strip" id="bgStrip" role="group" aria-label="현재 색에서 배경색 고르기"></div>
+      </div>
+    </div>
+    <p class="err" id="contrastErr" role="alert"></p>
+    <div class="result" aria-live="polite">
+      <div>
+        <div class="ratio" id="ratio"></div>
+        <div class="verdicts">
+          <div id="vNormal"></div>
+          <div id="vLarge"></div>
+        </div>
+      </div>
+      <div class="preview" id="preview">
+        <p class="big">오늘의 추천 코스</p>
+        <p class="small">다람쥐 헌 쳇바퀴에 타고파 1234</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="저장한 팔레트">
+    <h2>저장한 팔레트</h2>
+    <p class="caption" style="margin-top:var(--space-1)">이 브라우저에만 저장돼요. 다른 기기나 브라우저에서는 보이지 않고, 사이트 데이터를 지우면 사라져요.</p>
+    <p class="err" id="saveErr" role="alert" hidden>저장이 되지 않고 있어요</p>
+    <div id="saved"></div>
+  </section>
+</main>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+/* ---------- 설정 ---------- */
+const API = 'https://www.thecolorapi.com/scheme';
+const TIMEOUT_MS = 5000;  // [가정] 기획서 값
+const COUNT = 5;
+const MAX_SAVED = 20;     // [가정] 기획서 값
+const MODES = [
+  { id: 'analogic',   label: '유사색',   desc: '기준 색과 이웃한 색. 화면 전체를 안정적으로 채울 때' },
+  { id: 'complement', label: '보색',     desc: '기준 색과 마주 보는 색. 강조 버튼처럼 눈에 띄어야 할 곳에' },
+  { id: 'monochrome', label: '단색 명암', desc: '같은 색의 밝기 변화. 배경과 글자를 한 색으로 맞출 때' },
+  { id: 'triad',      label: '삼각 배색', desc: '색상환에서 세 방향으로 벌린 색. 활기 있는 분위기에' },
+];
+const DEFAULT_BASE = '#2563EB'; // 디자인 가이드의 포인트색 (기획서 6-1)
+const STORE = 'colorpalette.v1';
+
+const $ = (id) => document.getElementById(id);
+const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+/* ---------- 색 계산 ---------- */
+function normHex(s) {
+  const m = HEX_RE.exec(String(s).trim()); if (!m) return null;
+  let h = m[1]; if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  return '#' + h.toUpperCase();
+}
+function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function rgbToHex(r, g, b) { return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+function hexToHsl(h) {
+  let [r, g, b] = hexToRgb(h).map(v => v / 255);
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, l = (mx + mn) / 2;
+  let hh = 0, s = 0;
+  if (d) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    hh = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    hh *= 60; if (hh < 0) hh += 360;
+  }
+  return [hh, s * 100, l * 100];
+}
+function hslToHex(h, s, l) {
+  h = ((h % 360) + 360) % 360; s = Math.min(100, Math.max(0, s)) / 100; l = Math.min(100, Math.max(0, l)) / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+}
+/* 대체 계산 [가정]: 구체적인 값은 기획서 열린 질문 4번에 해당. The Color API와 같은 계산이라고 확인한 것이 아님 */
+function calcScheme(hex, mode) {
+  const [h, s, l] = hexToHsl(hex);
+  const rot = (d, ll = l) => hslToHex(h + d, s, ll);
+  const dark = Math.max(10, l - 20), light = Math.min(92, l + 20);
+  let list;
+  if (mode === 'analogic') list = [rot(-60), rot(-30), hex, rot(30), rot(60)];
+  else if (mode === 'complement') list = [hex, rot(180), rot(0, dark), rot(180, dark), rot(0, light)];
+  else if (mode === 'triad') list = [hex, rot(120), rot(240), rot(0, dark), rot(0, light)];
+  else list = [-30, -15, 0, 15, 30].map(d => d === 0 ? hex : rot(0, Math.min(95, Math.max(5, l + d))));
+  return list.map(v => ({ hex: v, name: '' }));
+}
+function lum(hex) {
+  const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const [r, g, b] = hexToRgb(hex).map(f);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a, b) { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+
+/* ---------- 저장소 ---------- */
+let storageOk = true;
+function lsGet(k) { try { return localStorage.getItem(k); } catch { storageOk = false; return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch { storageOk = false; } }
+let persisted = {};
+try { persisted = JSON.parse(lsGet(STORE) || '{}') || {}; } catch { persisted = {}; }
+let saved = Array.isArray(persisted.saved) ? persisted.saved.filter(p => p && normHex(p.base) && MODES.some(m => m.id === p.mode) && Array.isArray(p.colors) && p.colors.every(c => normHex(c.hex))).slice(0, MAX_SAVED) : [];
+let base = normHex(persisted.base) || DEFAULT_BASE;
+let fg = normHex(persisted.fg) || '#111111';
+let bg = normHex(persisted.bg) || '#FFFFFF';
+function persist() { lsSet(STORE, JSON.stringify({ base, fg, bg, saved })); $('saveErr').hidden = storageOk; }
+
+/* ---------- 조합 불러오기 ---------- */
+const cache = new Map();   // `${hex}|${mode}` -> { colors, source: 'api' | 'calc' }  (같은 기준 색은 재사용)
+const loading = new Set();
+let token = 0;
+
+async function fetchApi(hex, mode) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API}?hex=${hex.slice(1)}&mode=${mode}&count=${COUNT}&format=json`, { signal: ctl.signal });
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    const colors = (data.colors || []).map(c => ({ hex: normHex(c && c.hex && c.hex.value), name: (c && c.name && typeof c.name.value === 'string') ? c.name.value : '' })).filter(c => c.hex);
+    if (!colors.length) throw new Error('empty');
+    return colors;
+  } finally { clearTimeout(timer); }
+}
+async function loadScheme(hex, mode, tok, force) {
+  const key = hex + '|' + mode;
+  if (!force && cache.has(key)) return;
+  loading.add(key); drawSchemes();
+  let entry;
+  try { entry = { colors: await fetchApi(hex, mode), source: 'api' }; }
+  catch { entry = { colors: calcScheme(hex, mode), source: 'calc' }; }
+  loading.delete(key);
+  cache.set(key, entry);
+  if (tok === token) { drawSchemes(); drawStrips(); }
+}
+function loadAll(force) {
+  const tok = token;
+  MODES.forEach(m => loadScheme(base, m.id, tok, force));
+}
+
+/* ---------- 그리기: 조합 ---------- */
+function isSaved(mode) { return saved.findIndex(p => p.base === base && p.mode === mode && sameColors(p, cache.get(base + '|' + mode))); }
+function sameColors(p, entry) { return entry && p.colors.length === entry.colors.length && p.colors.every((c, i) => c.hex === entry.colors[i].hex); }
+
+function drawSchemes() {
+  const box = $('schemes'); box.replaceChildren();
+  let anyCalc = false;
+  for (const m of MODES) {
+    const key = base + '|' + m.id, entry = cache.get(key), busy = loading.has(key) && !entry;
+    if (entry && entry.source === 'calc') anyCalc = true;
+    const sec = document.createElement('article'); sec.className = 'scheme';
+    const head = document.createElement('div'); head.className = 'scheme-head';
+    const t = document.createElement('div');
+    const h = document.createElement('h2'); h.textContent = m.label;
+    if (entry && entry.source === 'calc') { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '직접 계산'; h.appendChild(tag); }
+    const d = document.createElement('p'); d.className = 'caption'; d.textContent = m.desc;
+    t.append(h, d);
+    const star = document.createElement('button'); star.className = 'btn btn-icon'; star.type = 'button';
+    const idx = entry ? isSaved(m.id) : -1, on = idx >= 0;
+    star.textContent = on ? '★' : '☆'; star.setAttribute('aria-pressed', on);
+    star.setAttribute('aria-label', `${m.label} 팔레트 ${on ? '저장 해제' : '저장'}`);
+    star.disabled = !entry || (!on && saved.length >= MAX_SAVED);
+    if (!on && saved.length >= MAX_SAVED) star.title = `팔레트는 ${MAX_SAVED}개까지 저장할 수 있어요`;
+    star.onclick = () => toggleSave(m, entry);
+    head.append(t, star);
+    sec.appendChild(head);
+    const chips = document.createElement('div'); chips.className = 'chips';
+    if (busy) {
+      for (let i = 0; i < COUNT; i++) { const s = document.createElement('div'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = '<div class="skel"></div><div class="skel s"></div>'; chips.appendChild(s); }
+    } else if (entry) {
+      entry.colors.forEach(c => chips.appendChild(chip(c)));
+    }
+    sec.appendChild(chips);
+    box.appendChild(sec);
+  }
+  $('banner').hidden = !anyCalc;
+}
+function chip(c) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'chip';
+  b.setAttribute('aria-label', `${c.hex}${c.name ? ' ' + c.name : ''} 복사`);
+  const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = c.hex;
+  const hex = document.createElement('span'); hex.className = 'hex'; hex.textContent = c.hex;
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = c.name; if (c.name) nm.title = c.name;
+  b.append(sw, hex, nm);
+  b.onclick = () => copy(c.hex, hex);
+  return b;
+}
+let copyTimers = new WeakMap();
+async function copy(text, label) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch {
+    try { const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); ta.remove(); } catch {}
+  }
+  clearTimeout(copyTimers.get(label));
+  label.textContent = ok ? '복사됨' : '복사하지 못했어요';
+  $('live').textContent = ok ? `${text} 복사됨` : '복사하지 못했어요';
+  copyTimers.set(label, setTimeout(() => { label.textContent = text; }, 1500));
+}
+
+/* ---------- 저장 ---------- */
+function toggleSave(m, entry) {
+  if (!entry) return;
+  const idx = isSaved(m.id);
+  if (idx >= 0) saved.splice(idx, 1);
+  else if (saved.length < MAX_SAVED) saved.unshift({ id: Date.now() + Math.random(), name: `${base} ${m.label}`, base, mode: m.id, source: entry.source, colors: entry.colors });
+  persist(); drawSchemes(); drawSaved();
+}
+function drawSaved() {
+  const box = $('saved'); box.replaceChildren();
+  if (!saved.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = '조합 줄의 ☆를 눌러 마음에 드는 팔레트를 저장해 보세요'; box.appendChild(p); return; }
+  const ul = document.createElement('ul'); ul.className = 'saved-list';
+  for (const p of saved) {
+    const li = document.createElement('li'); li.className = 'saved-item';
+    const mini = document.createElement('button'); mini.type = 'button'; mini.className = 'mini';
+    mini.setAttribute('aria-label', `${p.name} 불러오기`); mini.title = '눌러서 불러오기';
+    p.colors.forEach(c => { const s = document.createElement('span'); s.style.background = c.hex; mini.appendChild(s); });
+    mini.onclick = () => loadSaved(p);
+    const row = document.createElement('div'); row.className = 'saved-row';
+    const inp = document.createElement('input'); inp.type = 'text'; inp.value = p.name; inp.maxLength = 40; inp.setAttribute('aria-label', '팔레트 이름');
+    inp.onchange = () => { p.name = inp.value.trim() || `${p.base} ${MODES.find(m => m.id === p.mode).label}`; inp.value = p.name; persist(); };
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'btn btn-text'; del.textContent = '삭제';
+    del.setAttribute('aria-label', `${p.name} 삭제`);
+    del.onclick = () => { saved = saved.filter(x => x !== p); persist(); drawSaved(); drawSchemes(); };
+    row.append(inp, del);
+    const meta = document.createElement('p'); meta.className = 'caption';
+    meta.textContent = `${MODES.find(m => m.id === p.mode).label} · 기준 ${p.base}${p.source === 'calc' ? ' · 직접 계산' : ''}`;
+    li.append(mini, row, meta);
+    ul.appendChild(li);
+  }
+  box.appendChild(ul);
+}
+function loadSaved(p) {
+  // 저장한 색 목록을 그대로 복원 (외부 서비스를 다시 부르지 않음)
+  cache.set(p.base + '|' + p.mode, { colors: p.colors, source: p.source === 'calc' ? 'calc' : 'api' });
+  setBase(p.base);
+}
+
+/* ---------- 기준 색 ---------- */
+function setBase(hex) {
+  base = hex; token++;
+  $('basePick').value = hex.toLowerCase(); $('baseHex').value = hex; $('baseErr').textContent = '';
+  persist(); drawSchemes(); drawStrips(); loadAll(false);
+}
+let hexTimer;
+$('baseHex').addEventListener('input', () => {
+  clearTimeout(hexTimer);
+  const v = $('baseHex').value.trim();
+  if (/^#?[0-9a-f]{6}$/i.test(v)) hexTimer = setTimeout(applyBaseText, 400);
+});
+$('baseHex').addEventListener('change', applyBaseText);
+$('baseHex').addEventListener('keydown', (e) => { if (e.key === 'Enter') applyBaseText(); });
+function applyBaseText() {
+  clearTimeout(hexTimer);
+  const n = normHex($('baseHex').value);
+  if (!n) { $('baseErr').textContent = '올바른 색 코드가 아니에요'; $('baseHex').value = base; return; }
+  if (n !== base) setBase(n); else { $('baseHex').value = n; $('baseErr').textContent = ''; }
+}
+// 피커를 끄는 동안(input)은 호출하지 않고, 선택을 마쳤을 때(change)만 새 조합을 불러옴
+$('basePick').addEventListener('input', () => { $('baseHex').value = $('basePick').value.toUpperCase(); });
+$('basePick').addEventListener('change', () => { const n = normHex($('basePick').value); if (n && n !== base) setBase(n); });
+$('retryBtn').onclick = () => {
+  token++; const tok = token;
+  MODES.forEach(m => { const e = cache.get(base + '|' + m.id); if (e && e.source === 'calc') loadScheme(base, m.id, tok, true); });
+};
+
+/* ---------- 대비 확인 ---------- */
+function drawStrips() {
+  const uniq = [];
+  for (const m of MODES) { const e = cache.get(base + '|' + m.id); if (e) e.colors.forEach(c => { if (!uniq.includes(c.hex)) uniq.push(c.hex); }); }
+  for (const x of ['#111111', '#FFFFFF']) if (!uniq.includes(x)) uniq.push(x);
+  for (const [id, cur, setter] of [['fgStrip', fg, v => { fg = v; }], ['bgStrip', bg, v => { bg = v; }]]) {
+    const el = $(id); el.replaceChildren();
+    uniq.forEach(hex => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pick'; b.style.background = hex;
+      const sel = hex === cur; b.setAttribute('aria-pressed', sel); b.setAttribute('aria-label', hex);
+      b.title = hex;
+      if (sel) { b.textContent = '✓'; b.style.color = getComputedStyle(document.documentElement).getPropertyValue(lum(hex) > 0.4 ? '--color-text' : '--color-bg'); }
+      b.onclick = () => { setter(hex); persist(); drawStrips(); drawContrast(); };
+      el.appendChild(b);
+    });
+  }
+}
+function drawContrast() {
+  $('fgHex').value = fg; $('bgHex').value = bg; $('fgPick').value = fg.toLowerCase(); $('bgPick').value = bg.toLowerCase();
+  const r = contrast(fg, bg);
+  $('ratio').textContent = `${(Math.floor(r * 100) / 100).toFixed(2)} : 1`;
+  const v = (el, label, min) => { const ok = r >= min; el.textContent = `${ok ? '✓ 통과' : '✕ 미달'} — ${label} (${min} : 1 이상)`; el.className = ok ? '' : 'v-fail'; };
+  v($('vNormal'), '일반 글자', 4.5); v($('vLarge'), '큰 글자', 3);
+  const p = $('preview'); p.style.background = bg; p.style.color = fg;
+}
+function bindContrast(textId, pickId, setter) {
+  const apply = () => {
+    const n = normHex($(textId).value);
+    if (!n) { $('contrastErr').textContent = '올바른 색 코드가 아니에요'; drawContrast(); return; }
+    $('contrastErr').textContent = ''; setter(n); persist(); drawStrips(); drawContrast();
+  };
+  $(textId).addEventListener('change', apply);
+  $(textId).addEventListener('keydown', (e) => { if (e.key === 'Enter') apply(); });
+  $(pickId).addEventListener('input', () => { const n = normHex($(pickId).value); if (n) { setter(n); drawStrips(); drawContrast(); } });
+  $(pickId).addEventListener('change', persist);
+}
+bindContrast('fgHex', 'fgPick', v => { fg = v; });
+bindContrast('bgHex', 'bgPick', v => { bg = v; });
+
+/* 시작 */
+document.querySelectorAll('.tab[aria-disabled="true"]').forEach(t => t.onclick = (e) => e.preventDefault());
+$('basePick').value = base.toLowerCase(); $('baseHex').value = base;
+drawContrast(); drawSaved(); drawSchemes(); drawStrips(); loadAll(false);
+$('saveErr').hidden = storageOk;
+</script>
+</body>
+</html>
