@@ -1,0 +1,20 @@
+:root {
+  --color-bg: #FFFFFF;
+  --color-surface: #F6F6F5;
+  --color-text: #111111;
+  --color-text-sub: #5F6368;
+  --color-text-muted: #6B7280;
+  --color-border: #D4D4D2;
+  --color-border-strong: #8A8A87;
+  --color-accent: #2563EB;
+  --color-on-accent: #FFFFFF;
+  --color-danger: #C62828;
+
+  --font-ui: "Noto Sans KR", system-ui, sans-serif;
+
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-5: 24px; --space-6: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+}
