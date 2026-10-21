@@ -10,44 +10,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap">
 <!-- 디자인 토큰은 app/tokens.css에서만 정의 -->
 <link rel="stylesheet" href="../app/tokens.css">
+<!-- 헤더·탭·제목 영역 공통 스타일 -->
+<link rel="stylesheet" href="../app/shell.css">
 <style>
-  /* [가정] app/tokens.css에 글자 크기 토큰이 없어 임시로 둠. 공통 변경 브랜치에서 app/tokens.css로 옮길 것 */
-  :root {
-    --text-title-size: 24px;   --text-title-weight: 700;   --text-title-lh: 1.3;
-    --text-heading-size: 18px; --text-heading-weight: 600; --text-heading-lh: 1.4;
-    --text-body-size: 14px;    --text-body-weight: 400;    --text-body-lh: 1.6;
-    --text-caption-size: 12px; --text-caption-weight: 400; --text-caption-lh: 1.5;
-  }
-
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--color-bg); color: var(--color-text);
-    font-family: var(--font-ui); font-size: var(--text-body-size);
-    line-height: var(--text-body-lh);
-  }
-  button, input, select { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
-  @media (max-width: 640px) { .wrap { padding: 0 var(--space-4); } }
-
-  /* 헤더 + 탭 */
-  header { border-bottom: 1px solid var(--color-border); }
-  header .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); height: 56px; }
-  .brand { font-weight: 700; white-space: nowrap; }
-  nav { display: flex; overflow-x: auto; }
-  .tab {
-    padding: var(--space-3) var(--space-4); border: 0; background: none; cursor: pointer;
-    color: var(--color-text-sub); white-space: nowrap; border-bottom: 2px solid transparent;
-    height: 56px;
-  }
-  .tab:hover { color: var(--color-text); }
-  .tab[aria-selected="true"] { color: var(--color-text); font-weight: 600; border-bottom-color: var(--color-accent); }
-  .tab[aria-disabled="true"] { cursor: not-allowed; opacity: .6; }
-
-  main { padding: var(--space-5) 0 var(--space-6); }
-  h1 { margin: 0; font-size: var(--text-title-size); font-weight: var(--text-title-weight); line-height: var(--text-title-lh); }
-  .intro { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-sub); }
   h2 { margin: 0 0 var(--space-3); font-size: var(--text-heading-size); font-weight: var(--text-heading-weight); line-height: var(--text-heading-lh); }
 
   /* 입력 */
@@ -94,23 +59,12 @@
   .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); text-align: center; color: var(--color-text-sub); }
 
   /* 저장 목록 */
-  .saved { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+  .saved { margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .saved .note { font-size: var(--text-body-size); color: var(--color-text-muted); }
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <div class="brand">디자이너 도구</div>
-    <nav role="tablist" aria-label="서비스">
-      <button class="tab" role="tab" aria-selected="true">폰트저울</button>
-      <button class="tab" role="tab" aria-selected="false" aria-disabled="true" title="아직 만들지 않았어요">무드보드</button>
-      <button class="tab" role="tab" aria-selected="false" aria-disabled="true" title="아직 만들지 않았어요">컬러 팔레트</button>
-    </nav>
-  </div>
-</header>
-
 <main class="wrap">
   <h1>폰트저울</h1>
   <p class="intro">한글 서체를 저울에 올리듯, 같은 문장으로 나란히 견줘보세요.</p>
@@ -292,7 +246,6 @@ $('weight').onchange = (e) => { state.weight = +e.target.value; save(); renderCa
 $('size').oninput = (e) => { state.size = +e.target.value; save(); renderControls(); renderCards(); };
 $('track').oninput = (e) => { state.track = +e.target.value; save(); renderControls(); renderCards(); };
 document.querySelectorAll('[data-sample]').forEach(b => b.onclick = () => { state.text = b.dataset.sample; $('text').value = state.text; save(); renderCards(); });
-document.querySelectorAll('.tab[aria-disabled="true"]').forEach(t => t.onclick = (e) => e.preventDefault());
 
 // 저장된 값에 이전 목록에 없는 폰트가 있으면 비움
 state.slots = (state.slots.length ? state.slots : DEFAULTS.slots).slice(0, 3).map(n => byName(n) ? n : null);
